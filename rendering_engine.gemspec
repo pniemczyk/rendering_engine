@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["pniemczyk@o2.pl"]
   spec.description   = %q{ Rendering engine based on ERB }
   spec.summary       = %q{ Rendering engine based on ERB }
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/pniemczyk/rendering_engine"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
