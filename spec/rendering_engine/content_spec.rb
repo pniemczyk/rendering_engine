@@ -6,9 +6,17 @@ describe RenderingEngine::Content do
   let(:relative_path) { 'login/form.html' }
   let(:file_path)     { File.join(base_path, relative_path) }
   let(:content)       { double('ContentObject') }
+  let(:content_data)  { nil }
+  let(:custom_helper) { nil }
+  let(:opts) do
+    {
+      base_folder_path: test_base_path,
+      data: content_data,
+      custom_helper: custom_helper
+    }
+  end
 
-
-  subject { described_class.new(file_path, test_base_path) }
+  subject { described_class.new(file_path, opts) }
 
   context '#source' do
 
@@ -48,7 +56,7 @@ describe RenderingEngine::Content do
         let(:base_folder_path) { 'root/contract/files/login' }
         before do
           ERB.should_receive(:new).with(source).and_return(erb_instance)
-          subject.should_receive(:helpers).with(base_folder_path)
+          subject.should_receive(:helper).with(base_folder_path, content_data)
             .and_return(double)
           erb_instance.should_receive(:result).with(an_instance_of(Binding))
             .and_return(rendered_source)

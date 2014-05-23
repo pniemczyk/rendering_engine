@@ -4,9 +4,9 @@ module RenderingEngine
       @base_path = base_path
     end
 
-    def get(relative_path)
+    def get(relative_path, opts={})
       file_path = File.join(base_path, relative_path)
-      Content.new(file_path)
+      Content.new(file_path, opts)
     end
 
     private

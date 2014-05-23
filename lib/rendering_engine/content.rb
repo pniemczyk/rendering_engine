@@ -2,18 +2,23 @@ require 'erb'
 
 module RenderingEngine
   class Content
-    attr_reader :file_path
+    attr_reader :file_path, :data
 
-    def initialize(file_path, base_folder_path=nil)
+    def initialize(file_path, opts={})
       @file_path        = file_path
-      @base_folder_path = base_folder_path
+      @base_folder_path = opts[:base_folder_path]
+      @data             = opts[:data]
+      @custom_helper    = opts[:custom_helper]
     end
 
     def source
       @source ||= (
         case kind
         when :orginal  then File.read(file_path)
-        when :template then ERB.new(File.read(file_path_as_erb)).result(helpers(base_folder_path).instance_eval { binding })
+        when :template
+          ERB.new(File.read(file_path_as_erb)).result(
+            helper(base_folder_path, data).instance_eval { binding }
+          )
         else ''
         end
       )
@@ -49,8 +54,10 @@ module RenderingEngine
 
     private
 
-    def helpers(path)
-      ContentHelpers.new(base_path: path)
+    attr_reader :custom_helper
+
+    def helper(path, content_data)
+      (custom_helper || ContentHelpers).new(base_path: path, data: content_data)
     end
 
     def orginal_file_present?
