@@ -28,7 +28,7 @@ Or install it yourself as:
       path = "#{params[:client]}/#{params[:path]}"
       data = params[:data]
 
-      content = content_provider.get(path, data)
+      content = content_provider.get(path, data: data)
       return not_found if content.unknown?
 
       render text: content.source
