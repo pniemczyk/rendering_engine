@@ -1,5 +1,10 @@
 # RenderingEngine
 
+[![Gem Version](https://badge.fury.io/rb/rendering_engine.svg)](http://badge.fury.io/rb/rendering_engine)
+[![Build Status](https://travis-ci.org/pniemczyk/rendering_engine.svg?branch=0.2.0)](https://travis-ci.org/pniemczyk/rendering_engine)
+[![Dependency Status](https://gemnasium.com/pniemczyk/rendering_engine.svg)](https://gemnasium.com/pniemczyk/rendering_engine)
+[![Coverage Status](https://coveralls.io/repos/pniemczyk/rendering_engine/badge.png)](https://coveralls.io/r/pniemczyk/rendering_engine)
+
 ## Installation
 
 Add this line to your application's Gemfile:
