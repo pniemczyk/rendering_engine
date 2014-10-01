@@ -1,13 +1,13 @@
-require "spec_helper"
+require 'spec_helper'
 
 describe RenderingEngine::Content do
-  let(:test_base_path){ nil }
-  let(:base_path)     { 'root/contract/files' }
-  let(:relative_path) { 'login/form.html' }
-  let(:file_path)     { File.join(base_path, relative_path) }
-  let(:content)       { double('ContentObject') }
-  let(:content_data)  { nil }
-  let(:custom_helper) { nil }
+  let(:file_repo)      { double('RenderingEngine::FileRepo') }
+  let(:test_base_path) { nil }
+  let(:relative_path)  { 'login' }
+  let(:file_path)      { "#{relative_path}/form.html" }
+  let(:content)        { double('ContentObject') }
+  let(:content_data)   { nil }
+  let(:custom_helper)  { nil }
   let(:opts) do
     {
       base_folder_path: test_base_path,
@@ -16,27 +16,27 @@ describe RenderingEngine::Content do
     }
   end
 
-  subject { described_class.new(file_path, opts) }
+  subject { described_class.new(file_repo, file_path, opts) }
 
   context '#source' do
 
-    before(:each) { subject.should_receive(:kind).and_return(kind) }
+    before(:each) { expect(subject).to receive(:kind).and_return(kind) }
 
     context 'when file is not found' do
       let(:kind) { :unknown }
 
       it 'returns empty string' do
-        subject.source.should eq ''
+        expect(subject.source).to eq ''
       end
     end
 
     context 'when orginal file is found' do
       let(:kind)   { :orginal }
       let(:source) { 'file_source' }
-      before { File.should_receive(:read).with(file_path).and_return(source) }
+      before { expect(file_repo).to receive(:read).with(file_path).and_return(source) }
 
       it 'returns source of file' do
-        subject.source.should eq source
+        expect(subject.source).to eq source
       end
     end
 
@@ -45,24 +45,30 @@ describe RenderingEngine::Content do
       let(:source)          { 'calc 1+1=<%= 1+1 %>' }
       let(:rendered_source) { 'calc 1+1=2' }
       let(:erb_file_path)   { "#{file_path}.erb" }
-      before { File.should_receive(:read).with(erb_file_path).and_return(source) }
+      before do
+        expect(file_repo).to receive(:file_dirname)
+                             .with(file_path)
+                             .and_return(relative_path)
+        expect(file_repo).to receive(:read)
+                             .with(erb_file_path)
+                             .and_return(source)
+      end
 
       it 'returns rendered source' do
-        subject.source.should eq rendered_source
+        expect(subject.source).to eq rendered_source
       end
 
       context 'erb result' do
-        let(:erb_instance)     { double('erb_instance') }
-        let(:base_folder_path) { 'root/contract/files/login' }
+        let(:erb_instance) { double('erb_instance') }
         before do
-          ERB.should_receive(:new).with(source).and_return(erb_instance)
-          subject.should_receive(:helper).with(base_folder_path, content_data)
+          expect(ERB).to receive(:new).with(source).and_return(erb_instance)
+          expect(subject).to receive(:helper).with(relative_path, content_data)
             .and_return(double)
-          erb_instance.should_receive(:result).with(an_instance_of(Binding))
+          expect(erb_instance).to receive(:result).with(an_instance_of(Binding))
             .and_return(rendered_source)
         end
         it 'receives helper' do
-          subject.source.should eq rendered_source
+          expect(subject.source).to eq rendered_source
         end
       end
     end
@@ -70,53 +76,53 @@ describe RenderingEngine::Content do
 
   context '#kind' do
     context 'when orginal_file_present' do
-      before { subject.should_receive(:orginal_file_present?).and_return(true) }
+      before { expect(subject).to receive(:orginal_file_present?).and_return(true) }
       it 'returns :orginal' do
-        subject.kind.should eq :orginal
+        expect(subject.kind).to eq :orginal
       end
     end
 
     context 'when orginal_file_present is missing but template file is present' do
 
       before do
-        subject.should_receive(:orginal_file_present?).and_return(false)
-        subject.should_receive(:file_as_erb_present?).and_return(true)
+        expect(subject).to receive(:orginal_file_present?).and_return(false)
+        expect(subject).to receive(:file_as_erb_present?).and_return(true)
       end
 
       it 'returns :template' do
-        subject.kind.should eq :template
+        expect(subject.kind).to eq :template
       end
     end
 
     context 'when orginal and template file is missing' do
 
       before do
-        subject.should_receive(:orginal_file_present?).and_return(false)
-        subject.should_receive(:file_as_erb_present?).and_return(false)
+        expect(subject).to receive(:orginal_file_present?).and_return(false)
+        expect(subject).to receive(:file_as_erb_present?).and_return(false)
       end
 
       it 'returns :unknown' do
-        subject.kind.should eq :unknown
+        expect(subject.kind).to eq :unknown
       end
     end
   end
 
   %w{template orginal unknown}.each do |method_name|
     it "##{method_name}? returns true when content kind is :#{method_name}" do
-      subject.should_receive(:kind).and_return(method_name.to_sym)
-      subject.public_send("#{method_name}?").should be_true
+      expect(subject).to receive(:kind).and_return(method_name.to_sym)
+      expect(subject.public_send("#{method_name}?")).to eq true
     end
 
     it "##{method_name}? returns false when content kind is not :#{method_name}" do
-      subject.should_receive(:kind).and_return(:bad)
-      subject.public_send("#{method_name}?").should be_false
+      expect(subject).to receive(:kind).and_return(:bad)
+      expect(subject.public_send("#{method_name}?")).to eq false
     end
   end
 
   it '#base_folder_path' do
-    subject.should_receive(:file_path).and_return(relative_path)
-    subject.base_folder_path.should eq 'login'
+    expect(file_repo).to receive(:file_dirname)
+                         .with(file_path)
+                         .and_return(relative_path)
+    expect(subject.base_folder_path).to eq(relative_path)
   end
 end
-
-

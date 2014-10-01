@@ -16,7 +16,8 @@ Or install it yourself as:
 
 ## Usage
 
-    $ content_provider = RenderingEngine::Provider.new(base_path)
+    $ file_repo        = RenderingEngine::FileRepo.new(base_path)
+    $ content_provider = RenderingEngine::Provider.new(file_repo)
     $ content = content_provider.get(relative_file_path)
     $ content.source #gets source of file (rendered or not :D)
     $ content.kind return (:orginal, :template, :unknown)
@@ -35,9 +36,68 @@ Or install it yourself as:
     end
 
     def content_provider
-      @content_provider ||= RenderingEngine::Provider.new(Rails.root.join('app/content'))
+      @content_provider ||= RenderingEngine::Provider.new(file_repo)
+    end
+
+    def file_repo
+      @file_repo ||= RenderingEngine::FileRepo(Rails.root.join('app/content'))
     end
     ---
+
+## Own File repository class
+needed gems 'moped' and 'moped-gridfs'
+
+```
+class MongoFileRepo
+  def initilaize(mongo)
+    @mongo = mongo
+  end
+
+  def get(file_path)
+    bucket.open(file_path, 'r+')
+  end
+
+  def read(file_path)
+    bucket.open(file_path, 'r').read
+  end
+
+  def exist?(file_path)
+    bucket.files.select { |f| f.filename == file_path }.count > 0
+  end
+
+  def save(file_path, body, opts = {})
+    file_opts = opts.merge(filename: file_path)
+    bucket.open(file_opts , 'w+').write(body)
+  end
+
+  def delete(file_path)
+    bucket.delete(file_path)
+  end
+
+  def file_dirname(file_path)
+    File.dirname(file_path)
+  end
+
+  private
+
+  attr_reader :mongo
+
+  def bucket
+    @bucket ||= mongo.bucket
+  end
+end
+```
+
+### Usage own custom file repository class
+
+```
+
+mongo = Moped::Session.new(['127.0.0.1:27017'], database: 'test')
+file_repo = MongoFileRepo(mongo)
+provider = RenderingEngine::Provider.new(file_repo)
+provider.get(path, custom_helper: ContentCustomHelpers).source
+
+```
 
 ## Own Helper class
 
@@ -69,11 +129,12 @@ end
 
 ```
 
-### Usage own custom class
+### Usage own custom helper class
 
 ```
 
-provider = RenderingEngine::Provider.new(Rails.root.join('app/content'), custom_helper: ContentCustomHelpers)
+file_repo = RenderingEngine::FileRepo.new(Rails.root.join('app/content'))
+provider = RenderingEngine::Provider.new(file_repo, custom_helper: ContentCustomHelpers)
 provider.get(path).source
 
 ```
@@ -82,9 +143,9 @@ or
 
 ```
 
-provider = RenderingEngine::Provider.new(Rails.root.join('app/content'))
+file_repo = RenderingEngine::FileRepo.new(Rails.root.join('app/content'))
+provider = RenderingEngine::Provider.new(file_repo)
 provider.get(path, custom_helper: ContentCustomHelpers).source
-
 
 ```
 

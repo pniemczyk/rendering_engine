@@ -2,9 +2,10 @@ require 'erb'
 
 module RenderingEngine
   class Content
-    attr_reader :file_path, :data
+    attr_reader :file_repo, :file_path, :data
 
-    def initialize(file_path, opts={})
+    def initialize(file_repo, file_path, opts = {})
+      @file_repo        = file_repo
       @file_path        = file_path
       @base_folder_path = opts[:base_folder_path]
       @data             = opts[:data]
@@ -14,9 +15,9 @@ module RenderingEngine
     def source
       @source ||= (
         case kind
-        when :orginal  then File.read(file_path)
+        when :orginal  then file_repo.read(file_path)
         when :template
-          ERB.new(File.read(file_path_as_erb)).result(
+          ERB.new(file_repo.read(file_path_as_erb)).result(
             helper(base_folder_path, data).instance_eval { binding }
           )
         else ''
@@ -49,7 +50,7 @@ module RenderingEngine
     end
 
     def base_folder_path
-      @base_folder_path ||= File.dirname(file_path)
+      @base_folder_path ||= file_repo.file_dirname(file_path)
     end
 
     private
@@ -57,15 +58,17 @@ module RenderingEngine
     attr_reader :custom_helper
 
     def helper(path, content_data)
-      (custom_helper || ContentHelpers).new(base_path: path, data: content_data)
+      (custom_helper || ContentHelpers).new(file_repo,
+                                            base_path: path,
+                                            data: content_data)
     end
 
     def orginal_file_present?
-      File.exist?(file_path)
+      file_repo.exist?(file_path)
     end
 
     def file_as_erb_present?
-      File.exist?(file_path_as_erb)
+      file_repo.exist?(file_path_as_erb)
     end
 
     def file_path_as_erb
